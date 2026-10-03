@@ -1,0 +1,10 @@
+node_modules/
+.svelte-kit/
+dist/
+.sites-runtime/
+.env
+.env.*
+!.env.example
+*.tar.gz
+
+.wrangler/

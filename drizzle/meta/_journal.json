@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791055025424,
+      "tag": "0000_jazzy_bloodstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791064847927,
+      "tag": "0001_pretty_lake",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791065813617,
+      "tag": "0002_violet_night_thrasher",
+      "breakpoints": true
+    }
+  ]
+}
