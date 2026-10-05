@@ -1,17 +1,18 @@
 <script lang="ts">import {translate,dateLocale} from '$lib/i18n';const t=(text:string)=>translate(page.data.lang,text);
  import { onMount } from 'svelte';
  import { fade, fly } from 'svelte/transition';
- import { Sparkles, Upload, Camera, Heart, X, Check, Download, RefreshCw, ImagePlus, ChevronDown, SlidersHorizontal, Flower2, LoaderCircle, WandSparkles } from 'lucide-svelte';
+ import { Sparkles, Upload, Camera, Heart, X, Check, Download, RefreshCw, ImagePlus, ChevronDown, SlidersHorizontal, Flower2, LoaderCircle, WandSparkles, Smartphone, UserRound, ArrowRight } from 'lucide-svelte';
  import AppHeader from '$lib/AppHeader.svelte';
  import { shapes } from '$lib/shapes';
  import {page} from '$app/state';
- import {appHeaders} from '$lib/pwa';
- let appReady=$state(false),quota=$state<{tier:string;used:number;limit:number;remaining:number;resetAt:number|null}|null>(null);
- async function refreshQuota(){try{const r=await fetch('/api/allowance',{cache:'no-store'});if(r.ok)quota=await r.json();}catch{}}
- async function startApp(){if(appReady)return;try{quota=await readResponse(await fetch('/api/app-session',{method:'POST',headers:appHeaders()}));appReady=true;if(page.url.searchParams.get('sample')==='1'&&!original){await sample();return;}const r=await fetch('/api/preview',{cache:'no-store'});if(!r.ok||original||busy)return;const data=await r.json();if(data.status==='COMPLETED'){result=data.image;mode='after';needsPhotoChoice=true;return;}busy=true;stage='Finishing your design';pollStarted=Date.now();await poll();}catch(e){errorMessage=e instanceof Error?e.message:'Your studio could not open. Please try again.';}}
+ import {appHeaders,inInstalledApp,requestInstall} from '$lib/pwa';
+ let installed=$state(false),installReady=$state(false),appReady=$state(false),quota=$state<{tier:string;used:number;limit:number;remaining:number;resetAt:number|null}|null>(null);
+ function syncInstallState(){installed=inInstalledApp();installReady=!!window.roseInstall?.prompt;}
+ async function refreshQuota(){try{const r=await fetch('/api/allowance',{cache:'no-store',headers:appHeaders()});if(r.ok)quota=await r.json();}catch{}}
+ async function startApp(){if(!installed||!page.data.user||appReady)return;try{quota=await readResponse(await fetch('/api/app-session',{method:'POST',headers:appHeaders()}));appReady=true;if(page.url.searchParams.get('sample')==='1'&&!original){await sample();return;}const r=await fetch('/api/preview',{cache:'no-store',headers:appHeaders()});if(!r.ok||original||busy)return;const data=await r.json();if(data.status==='COMPLETED'){result=data.image;mode='after';needsPhotoChoice=true;return;}busy=true;stage='Finishing your design';pollStarted=Date.now();await poll();}catch(e){errorMessage=e instanceof Error?e.message:'Your studio could not open. Please try again.';}}
  let shape=$state(shapes[0].name);
  let inspiring=$state(false);let suggestions=$state<{name:string;summary:string;prompt:string}[]>([]);
- async function inspire(){if(inspiring||busy)return;if(!appReady){await startApp();if(!appReady)return;}inspiring=true;errorMessage='';try{const data=await readResponse(await fetch('/api/inspire',{method:'POST',headers:appHeaders(),body:JSON.stringify({shape,prompt})}));suggestions=data.suggestions;}catch(e){errorMessage=e instanceof Error?e.message:'Inspiration could not load.';}finally{inspiring=false;}}
+ async function inspire(){if(inspiring||busy)return;if(!installed){requestInstall();return;}if(!page.data.user){window.location.assign('/login?mode=signup&next=/studio');return;}if(!appReady){await startApp();if(!appReady)return;}inspiring=true;errorMessage='';try{const data=await readResponse(await fetch('/api/inspire',{method:'POST',headers:appHeaders(),body:JSON.stringify({shape,prompt})}));suggestions=data.suggestions;}catch(e){errorMessage=e instanceof Error?e.message:'Inspiration could not load.';}finally{inspiring=false;}}
 
  let selected=$state('');let prompt=$state('');let finish=$state('Glossy');let color=$state('');
  let original=$state('');let result=$state('');let needsPhotoChoice=$state(false);let width=$state(1024);let height=$state(1024);
@@ -42,7 +43,7 @@
  async function readResponse(response:Response){const data=await response.json().catch(()=>({message:'Something went wrong. Please try again.'}));if(!response.ok)throw new Error(data.message||'Something went wrong. Please try again.');return data;}
  async function generate(){
   if(busy||reading||needsPhotoChoice)return;errorMessage='';
-  if(!appReady){await startApp();if(!appReady)return;}
+  if(!installed){requestInstall();return;}if(!page.data.user){window.location.assign('/login?mode=signup&next=/studio');return;}if(!appReady){await startApp();if(!appReady)return;}
   if(quota&&!quota.remaining){if(!page.data.user){window.location.assign('/login?mode=signup&next=/studio');return;}errorMessage=`You’ve used your ${quota.limit} designs today. ${quota.tier==='free'?'Premium includes 20 a day.':'Your allowance resets at midnight UTC.'}`;return;}
   if(!original){errorMessage='Add a photo of your nails to begin.';return;}
   if(prompt.trim().length<3){errorMessage='Tell us a little about your dream manicure.';promptInput?.focus();return;}
@@ -53,9 +54,9 @@
  }
  async function poll(){
   if(disposed)return;if(Date.now()-pollStarted>600_000){busy=false;errorMessage='Your design is taking longer than expected. Tap “Check design” to look for the result.';return;}
-  try{const response=await fetch('/api/preview',{cache:'no-store'});if(response.status>=500&&failures<3){failures++;pollTimer=setTimeout(poll,4000);return;}
+  try{const response=await fetch('/api/preview',{cache:'no-store',headers:appHeaders()});if(response.status>=500&&failures<3){failures++;pollTimer=setTimeout(poll,4000);return;}
    const data=await readResponse(response);failures=0;
-   if(data.status==='COMPLETED'){const img=new Image();img.src=data.image;await img.decode();if(disposed)return;result=data.image;mode=original?'compare':'after';compare=50;needsPhotoChoice=true;busy=false;await refreshQuota();notify(data.galleryWarning||(page.data.user?'Your new manicure is saved in your gallery ♡':'Your first design is ready. Create an account to save and download it ♡'));return;}
+   if(data.status==='COMPLETED'){const img=new Image();img.src=data.image;await img.decode();if(disposed)return;result=data.image;mode=original?'compare':'after';compare=50;needsPhotoChoice=true;busy=false;await refreshQuota();notify(data.galleryWarning||'Your new manicure is saved in your gallery ♡');return;}
    stage=data.status==='IN_QUEUE'?'Waiting for your turn':'Painting the little details';pollTimer=setTimeout(poll,2500);
   }catch(e){busy=false;errorMessage=e instanceof Error?e.message:'Connection interrupted. Tap “Check design” to try again.';}
  }
@@ -64,15 +65,20 @@
  onMount(()=>{
   disposed=false;online=navigator.onLine;const onOnline=()=>online=true,onOffline=()=>online=false;
   window.addEventListener('online',onOnline);window.addEventListener('offline',onOffline);
-  void startApp();const displayMode=matchMedia('(display-mode: standalone)');const displayChange=()=>{void startApp();};displayMode.addEventListener('change',displayChange);
+  syncInstallState();const installSync=()=>{syncInstallState();void startApp();};window.addEventListener('rose-install-state',installSync);void startApp();const displayMode=matchMedia('(display-mode: standalone)');const displayChange=()=>{syncInstallState();void startApp();};displayMode.addEventListener('change',displayChange);
   const lifecycle=new AbortController(),context=document.modelContext;
   if(context?.registerTool)try{Promise.resolve(context.registerTool({name:'set_nail_design',title:'Set nail design',description:'Set the nail design prompt without generating or spending credits.',inputSchema:{type:'object',properties:{prompt:{type:'string',minLength:3,maxLength:600}},required:['prompt'],additionalProperties:false},annotations:{readOnlyHint:false},execute(input){const p=(input as {prompt?:unknown})?.prompt;if(typeof p!=='string'||p.trim().length<3||p.length>600)throw new Error('Enter a design in 3–600 characters.');if(busy)throw new Error('A design is being created.');prompt=p;selected='';return{prompt,status:'staged'};}},{signal:lifecycle.signal})).catch(()=>{});}catch{}
-  return()=>{disposed=true;clearTimeout(pollTimer);clearTimeout(toastTimer);lifecycle.abort();displayMode.removeEventListener('change',displayChange);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};
+  return()=>{disposed=true;clearTimeout(pollTimer);clearTimeout(toastTimer);lifecycle.abort();displayMode.removeEventListener('change',displayChange);window.removeEventListener('rose-install-state',installSync);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};
  });
 </script>
 <svelte:head><title>{t("Rose Atelier — Your AI Nail Studio")}</title><meta name="description" content={t("Your nails, your imagination. Upload a hand photo and create your dream manicure design with AI.")}/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet"/></svelte:head>
 <div class="app-shell" class:has-ready={!!original&&prompt.trim().length>=3&&!needsPhotoChoice}>
  <AppHeader/>
+ {#if !installed}
+  <main class="access-gate" in:fly={{y:16,duration:400}}><span class="access-gate-icon"><Smartphone size={27}/></span><span class="eyebrow">{t("YOUR NAIL STUDIO, READY TO INSTALL")}</span><h1>{t("Install Rose Atelier to start designing.")}</h1><p>{t("Add the app to your home screen, then open it there to create your nail designs.")}</p><button class="primary" onclick={requestInstall}><Smartphone size={18}/>{installReady?t("Install Rose Atelier"):t("How to install Rose Atelier")}</button><small>{t("Rose Atelier installs from your browser. No app store download is needed.")}</small></main>
+ {:else if !page.data.user}
+  <main class="access-gate" in:fly={{y:16,duration:400}}><span class="access-gate-icon"><UserRound size={27}/></span><span class="eyebrow">{t("YOUR DESIGNS, SAVED FOR YOU")}</span><h1>{t("Create an account to design your nails.")}</h1><p>{t("Sign up or sign in in the installed app. Your free account includes 5 nail designs every day.")}</p><a class="primary" href="/login?mode=signup&next=/studio">{t("Create my free account")}<ArrowRight size={17}/></a><a class="access-gate-secondary" href="/login?next=/studio">{t("Already have an account? Sign in")}</a></main>
+ {:else}
  <main>
   <div class="intro" in:fly={{y:16,duration:600}}><div><span class="eyebrow"><Sparkles size={14}/> {t("YOUR PERSONAL NAIL ATELIER")}</span><h1>{t("A little polish.")}<br class="mobile-break"/> <i>{t("A lot of you.")}</i></h1><p>{t("Try your dream manicure on your own nails.")}</p></div><div class="intro-note"><span class="note-star">✧</span><span>{t("Dream it.")}<br/>{t("Try it. Love it.")}</span><Heart size={17}/></div></div>
   {#if !online}<div class="notice" role="status">{t("You’re offline. Connect to the internet to create a design.")}</div>{/if}
@@ -104,7 +110,9 @@
     {#if errorMessage&&original}<button class="check-preview" onclick={checkPreview} disabled={busy}><RefreshCw size={14}/> {t("Check design")}</button>{/if}
    </section>
   </div>{#if result&&!page.data.user}<div class="guest-save-card"><Heart size={20}/><h2>{t("Keep your first little obsession.")}</h2><p>{t("Create a free account to download this look and make up to 5 designs a day.")}</p><a class="primary" href="/login?mode=signup&next=/gallery">{t("Save my look & create an account")}</a></div>{/if}<div class="studio-footer"><span><Heart size={13}/> {t("A tiny ritual. A little joy.")}</span><span>{t("Your photo is sent to our AI provider only when you create a design.")}</span></div>
- </main><footer class="site-footer"><span>rose <i>atelier</i></span><small>{t("YOUR NEXT MANICURE, IMAGINED.")}</small><a href="https://unsplash.com/photos/vtQHwU4F13s" target="_blank" rel="noreferrer">{t("Inspiration photo by Chelson Tamares")}</a></footer>
+ </main>
+ {/if}
+ <footer class="site-footer"><span>rose <i>atelier</i></span><small>{t("YOUR NEXT MANICURE, IMAGINED.")}</small><a href="https://unsplash.com/photos/vtQHwU4F13s" target="_blank" rel="noreferrer">{t("Inspiration photo by Chelson Tamares")}</a></footer>
 </div>
 <input class="hidden-file" type="file" accept="image/jpeg,image/png,image/webp" bind:this={fileInput} onchange={(e)=>upload(e.currentTarget.files?.[0])} aria-label={t("Upload nail photo")} tabindex="-1"/>
 <input class="hidden-file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" bind:this={cameraInput} onchange={(e)=>upload(e.currentTarget.files?.[0])} aria-label={t("Take nail photo")} tabindex="-1"/>

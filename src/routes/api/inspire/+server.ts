@@ -2,9 +2,11 @@ import { json,error,isHttpError } from '@sveltejs/kit';
 import { client,sameOrigin } from '$lib/server/fal';
 import { shapes } from '$lib/shapes';
 import type { RequestHandler } from './$types';
-import { allowance,reserveInspiration } from '$lib/server/access';
+import { allowance,reserveInspiration,appOnly } from '$lib/server/access';
+import { requireAuth } from '$lib/server/auth';
 export const POST:RequestHandler=async event=>{
  sameOrigin(event);
+ requireAuth(event);appOnly(event);
  const quota=await allowance(event);if(!quota.remaining)error(quota.tier==='guest'?401:429,'Your design allowance is used. Sign in or come back when your allowance resets.');
  const last=Number(event.cookies.get('rose-inspire')||0);if(Date.now()-last<10000)error(429,'Give your inspiration a moment, then try again.');
  const raw=await event.request.text();if(raw.length>2000)error(400,'Your idea is too long.');let body;try{body=JSON.parse(raw);}catch{error(400,'Please try again.');}

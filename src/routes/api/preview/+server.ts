@@ -3,9 +3,11 @@ import { client, MODEL, sameOrigin, credentials, signature, verifyJob } from '$l
 import type { RequestHandler } from './$types';
 import { shapes } from '$lib/shapes';
 import { owner,storage,saveResult } from '$lib/server/gallery';
-import { reserveGeneration } from '$lib/server/access';
+import { appOnly,reserveGeneration } from '$lib/server/access';
+import { requireAuth } from '$lib/server/auth';
 export const POST: RequestHandler = async event => {
  sameOrigin(event);
+ requireAuth(event);appOnly(event);
  const fal = client(event);
  const prior = event.cookies.get('rose-job');
  if(prior) {
@@ -38,6 +40,7 @@ export const POST: RequestHandler = async event => {
  } catch(e) { const status=(e as {status?:number})?.status;await db.prepare('UPDATE generation_attempts SET status = ? WHERE id = ? AND request_id IS NULL').bind(status&&status>=400&&status<500?'failed':'unknown',reservation.id).run();error(502, 'We couldn’t confirm your design. Please check for a result before trying again.'); }
 };
 export const GET: RequestHandler = async event => {
+ requireAuth(event);appOnly(event);
  const id = await verifyJob(event);
  const fal = client(event);
  try {
