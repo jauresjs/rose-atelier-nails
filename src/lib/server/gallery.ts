@@ -13,7 +13,7 @@ export async function saveResult(event:RequestEvent,id:string,url:string){
  const row=await db.prepare('SELECT object_key FROM designs WHERE id = ? AND owner = ?').bind(id,user).first<{object_key:string|null}>();
  if(!row)return null;
  if(!row.object_key){
-  const host=new URL(url).hostname;if(host!=='fal.media'&&!host.endsWith('.fal.media'))throw new Error('Unexpected image host');
+  const parsed=new URL(url);const host=parsed.hostname;if(parsed.protocol!=='https:'||parsed.username||parsed.password||parsed.port||(host!=='fal.media'&&!host.endsWith('.fal.media')&&host!=='storage.googleapis.com'))throw new Error('Unexpected image host');
   const response=await fetch(url,{signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('Image download failed');
   const contentType=response.headers.get('content-type')?.split(';')[0]||'';if(!['image/jpeg','image/png','image/webp'].includes(contentType))throw new Error('Invalid image');
   const bytes=await response.arrayBuffer();if(bytes.byteLength>10_000_000)throw new Error('Image too large');
