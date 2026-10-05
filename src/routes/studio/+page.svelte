@@ -8,13 +8,13 @@
  import {inInstalledApp,appHeaders,requestInstall} from '$lib/pwa';
  let installReady=$state(false);let installed=$state(false),appReady=$state(false),quota=$state<{tier:string;used:number;limit:number;remaining:number;resetAt:number|null}|null>(null);
  async function refreshQuota(){try{const r=await fetch('/api/allowance',{cache:'no-store'});if(r.ok)quota=await r.json();}catch{}}
- async function startApp(){installed=inInstalledApp();if(!installed||appReady)return;try{quota=await readResponse(await fetch('/api/app-session',{method:'POST',headers:appHeaders()}));appReady=true;const r=await fetch('/api/preview',{cache:'no-store'});if(!r.ok||original||busy)return;const data=await r.json();if(data.status==='COMPLETED'){result=data.image;mode='after';return;}busy=true;stage='Finishing your preview';pollStarted=Date.now();await poll();}catch(e){errorMessage=e instanceof Error?e.message:'Your studio could not open. Please try again.';}}
+ async function startApp(){installed=inInstalledApp();if(!installed||appReady)return;try{quota=await readResponse(await fetch('/api/app-session',{method:'POST',headers:appHeaders()}));appReady=true;const r=await fetch('/api/preview',{cache:'no-store'});if(!r.ok||original||busy)return;const data=await r.json();if(data.status==='COMPLETED'){result=data.image;mode='after';needsPhotoChoice=true;return;}busy=true;stage='Finishing your preview';pollStarted=Date.now();await poll();}catch(e){errorMessage=e instanceof Error?e.message:'Your studio could not open. Please try again.';}}
  let shape=$state(shapes[0].name);
  let inspiring=$state(false);let suggestions=$state<{name:string;summary:string;prompt:string}[]>([]);
  async function inspire(){if(inspiring||busy)return;if(!installed){requestInstall();return;}if(!appReady){await startApp();if(!appReady)return;}inspiring=true;errorMessage='';try{const data=await readResponse(await fetch('/api/inspire',{method:'POST',headers:appHeaders(),body:JSON.stringify({shape,prompt})}));suggestions=data.suggestions;}catch(e){errorMessage=e instanceof Error?e.message:'Inspiration could not load.';}finally{inspiring=false;}}
 
  let selected=$state('');let prompt=$state('');let finish=$state('Glossy');let color=$state('');
- let original=$state('');let result=$state('');let width=$state(1024);let height=$state(1024);
+ let original=$state('');let result=$state('');let needsPhotoChoice=$state(false);let width=$state(1024);let height=$state(1024);
  let busy=$state(false);let reading=$state(false);let stage=$state('');let errorMessage=$state('');
  let compare=$state(50);let mode=$state<'after'|'compare'>('after');
  let toast=$state('');let downloading=$state(false);let online=$state(true);
@@ -31,15 +31,17 @@
    const ratio=Math.max(.5,Math.min(2,img.width/img.height));width=Math.round(Math.sqrt(1_000_000*ratio)/16)*16;height=Math.round(width/ratio/16)*16;
    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Your browser could not read this photo.');
    ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);const scale=Math.min(width/img.width,height/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(width-w)/2,(height-h)/2,w,h);
-   original=canvas.toDataURL('image/jpeg',.88);result='';mode='after';
+   original=canvas.toDataURL('image/jpeg',.88);result='';mode='after';needsPhotoChoice=false;
   }catch(e){errorMessage=e instanceof Error?e.message:'This photo could not be opened. Try another one.';}
   finally{if(url)URL.revokeObjectURL(url);reading=false;if(fileInput)fileInput.value='';if(cameraInput)cameraInput.value='';}
  }
  async function sample(){if(busy)return;try{const r=await fetch('/manicure.jpg');if(!r.ok)throw new Error();await upload(new File([await r.blob()],'sample.jpg',{type:'image/jpeg'}));notify('Sample added. Make it your own.');}catch{errorMessage='The sample could not load. Try your own photo.';}}
- function clearPhoto(){if(busy)return;original='';result='';errorMessage='';}
+ function clearPhoto(){if(busy)return;original='';result='';needsPhotoChoice=false;errorMessage='';}
+ function reuseLastPhoto(){if(busy||!original)return;result='';mode='after';needsPhotoChoice=false;errorMessage='';}
+ function takeNewPhoto(){if(!busy&&!reading)cameraInput.click();}
  async function readResponse(response:Response){const data=await response.json().catch(()=>({message:'Something went wrong. Please try again.'}));if(!response.ok)throw new Error(data.message||'Something went wrong. Please try again.');return data;}
  async function generate(){
-  if(busy||reading)return;errorMessage='';
+  if(busy||reading||needsPhotoChoice)return;errorMessage='';
   if(!installed){requestInstall();return;}if(!appReady){await startApp();if(!appReady)return;}
   if(quota&&!quota.remaining){if(!page.data.user){window.location.assign('/login?mode=signup&next=/studio');return;}errorMessage=`You’ve used your ${quota.limit} designs today. ${quota.tier==='free'?'Premium includes 20 a day.':'Your allowance resets at midnight UTC.'}`;return;}
   if(!original){errorMessage='Add a photo of your nails to begin.';return;}
@@ -53,7 +55,7 @@
   if(disposed)return;if(Date.now()-pollStarted>600_000){busy=false;errorMessage='Your preview is taking longer than expected. Tap “Check preview” to look for the result.';return;}
   try{const response=await fetch('/api/preview',{cache:'no-store'});if(response.status>=500&&failures<3){failures++;pollTimer=setTimeout(poll,4000);return;}
    const data=await readResponse(response);failures=0;
-   if(data.status==='COMPLETED'){const img=new Image();img.src=data.image;await img.decode();if(disposed)return;result=data.image;mode=original?'compare':'after';compare=50;busy=false;await refreshQuota();notify(data.galleryWarning||(page.data.user?'Your new manicure is saved in your gallery ♡':'Your first look is ready. Create an account to save and download it ♡'));return;}
+   if(data.status==='COMPLETED'){const img=new Image();img.src=data.image;await img.decode();if(disposed)return;result=data.image;mode=original?'compare':'after';compare=50;needsPhotoChoice=true;busy=false;await refreshQuota();notify(data.galleryWarning||(page.data.user?'Your new manicure is saved in your gallery ♡':'Your first look is ready. Create an account to save and download it ♡'));return;}
    stage=data.status==='IN_QUEUE'?'Waiting for your turn':'Painting the little details';pollTimer=setTimeout(poll,2500);
   }catch(e){busy=false;errorMessage=e instanceof Error?e.message:'Connection interrupted. Tap “Check preview” to try again.';}
  }
@@ -69,7 +71,7 @@
  });
 </script>
 <svelte:head><title>{t("Rose Atelier — Your AI Nail Studio")}</title><meta name="description" content={t("Your nails, your imagination. Upload a hand photo and preview your dream manicure with AI.")}/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet"/></svelte:head>
-<div class="app-shell" class:has-ready={installed&&!!original&&prompt.trim().length>=3}>
+<div class="app-shell" class:has-ready={installed&&!!original&&prompt.trim().length>=3&&!needsPhotoChoice}>
  <AppHeader/>
  <main>
   <div class="intro" in:fly={{y:16,duration:600}}><div><span class="eyebrow"><Sparkles size={14}/> {t("YOUR PERSONAL NAIL ATELIER")}</span><h1>{t("A little polish.")}<br class="mobile-break"/> <i>{t("A lot of you.")}</i></h1><p>{t("Try your dream manicure on your own nails.")}</p></div><div class="intro-note"><span class="note-star">✧</span><span>{t("Dream it.")}<br/>{t("Try it. Love it.")}</span><Heart size={17}/></div></div>
@@ -89,6 +91,7 @@
      {#if reading&&original}<div class="busy-overlay"><LoaderCircle class="spin" size={24}/><p>{t("Preparing your photo…")}</p></div>{/if}
      {#if busy}<div class="busy-overlay" transition:fade><div class="magic-orbit"><Sparkles size={34} strokeWidth={1.3}/><span>✧</span></div><h2>{t("A little magic in the making")}</h2><p>{t(stage)}</p><div class="loading-track"><span></span></div><small>{t("You can switch apps and come back.")}</small></div>{/if}
     </div>
+    {#if result&&needsPhotoChoice}<div class="next-photo-actions" role="group" aria-label={t("Choose how to continue")}><p>{t("Choose how to create your next look.")}</p>{#if original}<button class="secondary" onclick={reuseLastPhoto}><Sparkles size={16}/>{t("Reuse the last photo")}</button>{/if}<button class="primary" onclick={takeNewPhoto}><Camera size={16}/>{t("Take a new photo")}</button></div>{/if}
     <div class="preview-bottom">{#if result}<div class="view-toggle"><button class:active={mode==='after'} onclick={()=>mode='after'}>{t("New look")}</button><button class:active={mode==='compare'} onclick={()=>mode='compare'} disabled={!original}>{t("Before / after")}</button></div><button class="save-btn" onclick={saveImage} disabled={downloading}><Download size={16}/>{downloading?t("Saving…"):t("Save look")}</button>{:else}<span><Camera size={16}/> {t("Natural light. One hand. Nails in focus.")}</span><Heart size={17} strokeWidth={1.5}/>{/if}</div>
    </section>
    <section class="design-panel" aria-label={t("Customize your nail design")}>
@@ -96,7 +99,7 @@
     <div class="prompt-heading"><label class="prompt-label" for="prompt">{t("Describe your dream nails")} <span>♡</span></label><button class="inspire-btn" onclick={inspire} disabled={inspiring||busy||!online}>{#if inspiring}<LoaderCircle size={15} class="spin"/> {t("Dreaming…")}{:else}<WandSparkles size={15}/> {t("Inspire me")}{/if}</button></div>{#if suggestions.length}<div class="inspiration-list" aria-label={t("AI design suggestions")}>{#each suggestions as idea}<button class:selected={selected===idea.name} disabled={busy} onclick={()=>{prompt=idea.prompt;selected=idea.name;}}><span><b>{idea.name}</b><small>{idea.summary}</small></span><span>↗</span></button>{/each}<p>{t("Pick an idea to fill your prompt, then make it your own.")}</p></div>{/if}<div class="prompt-box"><textarea id="prompt" bind:this={promptInput} bind:value={prompt} oninput={()=>selected=''} maxlength="600" disabled={busy} placeholder={t("Think soft pink French tips, tiny cherries, a little shimmer…")} rows="3"></textarea><div class="prompt-foot"><span><Sparkles size={12}/> {t("Little details make it personal")}</span><span>{prompt.length}/600</span></div></div>
     <div class="preferences"><div><label for="finish">{t("The finish")}</label><div class="select-wrap"><select id="finish" bind:value={finish} disabled={busy}><option value="Glossy">{t("Glossy")}</option><option value="Matte">{t("Matte")}</option><option value="Pearlescent">{t("Pearlescent")}</option><option value="Chrome">{t("Chrome")}</option><option value="Glitter">{t("Glitter")}</option></select><ChevronDown size={15}/></div></div><fieldset><legend>{t("A touch of color")}</legend><div class="color-swatches">{#each colors as swatch}<button type="button" style={`--color:${swatch.value}`} class:chosen={color===swatch.value} aria-label={t(swatch.name)} aria-pressed={color===swatch.value} title={t(swatch.name)} onclick={()=>color=color===swatch.value?'':swatch.value} disabled={busy}>{#if color===swatch.value}<Check size={13}/>{/if}</button>{/each}</div></fieldset></div>
     {#if errorMessage}<div class="error-message" role="alert" transition:fade><span>{t(errorMessage)}</span><button onclick={()=>errorMessage=''} aria-label={t("Dismiss message")}><X size={16}/></button></div>{/if}
-    <button class="primary generate-btn" class:mobile-ready={!!original&&prompt.trim().length>=3} onclick={generate} disabled={busy||reading||!online}>{#if busy}<LoaderCircle size={19} class="spin"/>{t("Creating your manicure…")}{:else}<Sparkles size={19}/>{result?t("Dream up another look"):t("Preview my nails")}{/if}</button>
+    <button class="primary generate-btn" class:mobile-ready={!!original&&prompt.trim().length>=3&&!needsPhotoChoice} onclick={generate} disabled={busy||reading||needsPhotoChoice||!online}>{#if busy}<LoaderCircle size={19} class="spin"/>{t("Creating your manicure…")}{:else}<Sparkles size={19}/>{result?(needsPhotoChoice?t("Choose how to continue"):t("Dream up another look")):t("Preview my nails")}{/if}</button>
     <div class="generation-note"><span>{t("Made for your nails. Dreamed up by you.")}</span><small>{t("AI previews may vary from a salon result.")}</small></div>
     {#if errorMessage&&original}<button class="check-preview" onclick={checkPreview} disabled={busy}><RefreshCw size={14}/> {t("Check preview")}</button>{/if}
    </section>
