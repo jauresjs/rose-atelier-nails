@@ -3,10 +3,9 @@ import { client, MODEL, sameOrigin, credentials, signature, verifyJob } from '$l
 import type { RequestHandler } from './$types';
 import { shapes } from '$lib/shapes';
 import { owner,storage,saveResult } from '$lib/server/gallery';
-import { appOnly,reserveGeneration } from '$lib/server/access';
+import { reserveGeneration } from '$lib/server/access';
 export const POST: RequestHandler = async event => {
  sameOrigin(event);
- appOnly(event);
  const fal = client(event);
  const prior = event.cookies.get('rose-job');
  if(prior) {

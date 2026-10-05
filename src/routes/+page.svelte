@@ -1,3 +1,44 @@
-<script lang="ts">import {translate,dateLocale} from '$lib/i18n';import {page} from '$app/state';const t=(text:string)=>translate(page.data.lang,text);import AppHeader from '$lib/AppHeader.svelte';import {Sparkles,ArrowUpRight,Images,Heart} from 'lucide-svelte';import {fly} from 'svelte/transition';</script>
-<svelte:head><title>{t("Rose Atelier — Your little nail universe")}</title><meta name="description" content={t("Imagine your next manicure. Create AI nail designs on your own photo and collect your favorite looks.")}/></svelte:head>
-<div class="app-shell"><AppHeader/><main class="home-main"><section class="home-hero" in:fly={{y:18,duration:500}}><div class="home-copy"><span class="eyebrow"><Sparkles size={14}/> {t("YOUR LITTLE NAIL UNIVERSE")}</span><h1>{t("Your next obsession,")}<br/><i>{t("at your fingertips.")}</i></h1><p>{t("A little inspiration. A photo of your nails.")}<br/>{t("A manicure that feels so very you.")}</p><a class="primary home-create" href="/studio"><Sparkles size={20}/> {t("Generate a nail design")} <ArrowUpRight size={19}/></a><span class="home-whisper"><Heart size={13}/> {t("Dream it. Try it. Keep it.")}</span></div><div class="home-photo"><img src="/manicure.jpg" alt={t("Soft pink manicure inspiration")}/><span class="photo-sticker">{t("a little")}<br/><i>{t("main character")}</i><br/>{t("energy ♡")}</span><span class="hero-caption">{t("YOUR NAILS. ENDLESS POSSIBILITIES.")}</span></div></section><a href="/gallery" class="gallery-launch"><span class="launch-icon"><Images size={26}/></span><div><span class="eyebrow">{t("THE LOOKS YOU LOVE")}</span><h2>{t("My little gallery")}</h2><p>{t("Revisit your creations. Find your next salon inspiration.")}</p></div><ArrowUpRight size={24}/></a><nav class="home-extra" aria-label={t("More from your atelier")}><a href="/polls">{t("My nail polls ↗")}</a><a href="/premium">{t("Free & Premium ♡")}</a></nav><p class="home-footnote">{t("Made for a little self-expression, wherever you are.")}</p></main></div>
+<script lang="ts">
+ import {translate} from '$lib/i18n';
+ import {page} from '$app/state';
+ const t=(text:string)=>translate(page.data.lang,text);
+ import AppHeader from '$lib/AppHeader.svelte';
+ import {Sparkles,ArrowRight,Images,Heart,Camera,Check,ShieldCheck} from 'lucide-svelte';
+ import {fly} from 'svelte/transition';
+</script>
+
+<svelte:head>
+ <title>{t('Rose Atelier — AI manicure preview on your own nails')}</title>
+ <meta name="description" content={t('Upload a photo of your hand, choose a nail shape and describe your style. See an AI manicure preview before your next salon visit.')} />
+</svelte:head>
+
+<div class="app-shell"><AppHeader/><main class="acquisition-main">
+ <section class="acquisition-hero" in:fly={{y:18,duration:450}}>
+  <div class="acquisition-copy">
+   <span class="eyebrow"><Sparkles size={14}/>{t('AI NAIL DESIGN PREVIEW')}</span>
+   <h1>{t('Preview your next manicure')}<br/><i>{t('on your own nails.')}</i></h1>
+   <p>{t('Upload a hand photo, choose your nail shape and describe the look you want. Rose Atelier creates an AI preview on your own nails.')}</p>
+   <div class="acquisition-actions"><a class="primary home-create" href="/studio"><Sparkles size={19}/>{t('Try your free preview')}<ArrowRight size={18}/></a><a class="sample-link" href="/studio?sample=1">{t('Try it with a sample photo')}<ArrowRight size={15}/></a></div>
+   <ul class="first-try-points"><li><Check size={15}/>{t('One free preview')}</li><li><Check size={15}/>{t('No account needed')}</li><li><Check size={15}/>{t('No app install needed')}</li></ul>
+  </div>
+  <div class="acquisition-visual">
+   <div class="inspiration-frame"><img src="/manicure.jpg" alt={t('Example manicure inspiration on real hands')}/><span class="inspiration-tag"><Sparkles size={13}/>{t('A LOOK TO INSPIRE YOURS')}</span><span class="image-caption">{t('Your photo. Your design idea. Your preview.')}</span></div>
+   <div class="flow-card"><div><span>{t('01 · YOUR PHOTO')}</span><b>{t('Take or upload a hand photo')}</b></div><ArrowRight size={18}/><div><span>{t('02 · YOUR STYLE')}</span><b>{t('Choose shape and describe your look')}</b></div></div>
+  </div>
+ </section>
+
+ <section class="how-section" id="how-it-works" aria-labelledby="how-title">
+  <span class="eyebrow">{t('FROM IDEA TO NAIL PREVIEW')}</span><h2 id="how-title">{t('See your manicure idea before the salon.')}</h2>
+  <div class="how-cards"><article><span>01</span><Camera size={22}/><h3>{t('Add a hand photo')}</h3><p>{t('Take a new photo or choose one from your device. A sample is ready if you want to explore first.')}</p></article><article><span>02</span><Sparkles size={22}/><h3>{t('Make the look yours')}</h3><p>{t('Choose a nail shape, finish and color, then describe the details you have in mind.')}</p></article><article><span>03</span><Images size={22}/><h3>{t('Preview and save')}</h3><p>{t('See the AI design on your photo. Keep the result as inspiration for your next salon visit.')}</p></article></div>
+ </section>
+
+ <section class="privacy-promise" id="photo-privacy"><span class="privacy-icon"><ShieldCheck size={21}/></span><div><b>{t('Your photo stays yours.')}</b><p>{t('Your hand photo is sent to our AI provider only when you request a preview. You can try one preview without creating an account.')}</p></div><a href="/studio">{t('Try it now')}<ArrowRight size={15}/></a></section>
+
+ {#if page.data.user}
+  <a href="/gallery" class="gallery-launch"><span class="launch-icon"><Images size={26}/></span><div><span class="eyebrow">{t('THE LOOKS YOU LOVE')}</span><h2>{t('My little gallery')}</h2><p>{t('Revisit your creations. Find your next salon inspiration.')}</p></div><ArrowRight size={22}/></a>
+  <nav class="home-extra" aria-label={t('More from your atelier')}><a href="/polls">{t('My nail polls ↗')}</a><a href="/premium">{t('Premium plans')}</a></nav>
+ {:else}
+  <div class="closing-cta"><h2>{t('Ready to see your next manicure?')}</h2><a class="primary" href="/studio">{t('Try your free preview')}<ArrowRight size={17}/></a><small><Heart size={13}/>{t('One preview is free. No account or app install required.')}</small></div>
+ {/if}
+ <p class="home-footnote">{t('AI previews are creative inspiration and may differ from salon results.')}</p>
+</main></div>
