@@ -18,7 +18,7 @@
    <span class="eyebrow"><Sparkles size={14}/>{t('AI NAIL DESIGN STUDIO')}</span>
    <h1>{t('Design your next manicure')}<br/><i>{t('on your own nails.')}</i></h1>
    <p>{t('Install the Rose Atelier app and create a free account to design your next manicure on your own nails.')}</p>
-   <div class="acquisition-actions"><a class="primary home-create" href="/studio"><Sparkles size={19}/>{t('Get started in Rose Atelier')}<ArrowRight size={18}/></a><a class="sample-link" href="/studio?sample=1">{t('Explore with a sample photo')}<ArrowRight size={15}/></a></div>
+   <div class="acquisition-actions"><a class="primary home-create" href="/studio"><Sparkles size={19}/>{t('Get started in Rose Atelier')}<ArrowRight size={18}/></a>{#if page.data.user}<a class="home-gallery-button" href="/gallery"><Images size={17}/>{t('See my gallery')}</a>{/if}<a class="sample-link" href="/studio?sample=1">{t('Explore with a sample photo')}<ArrowRight size={15}/></a></div>
    <ul class="first-try-points"><li><Check size={15}/>{t('5 designs a day with a free account')}</li><li><Check size={15}/>{t('Install the app to create designs')}</li><li><Check size={15}/>{t('Sign in to save your gallery')}</li></ul>
   </div>
   <div class="acquisition-visual">
@@ -35,7 +35,6 @@
  <section class="privacy-promise" id="photo-privacy"><span class="privacy-icon"><ShieldCheck size={21}/></span><div><b>{t('Your photo stays yours.')}</b><p>{t('Your hand photo is sent to our AI provider only when you create a design. Sign in to the installed app whenever you are ready to create.')}</p></div><a href="/studio">{t('Get started')}<ArrowRight size={15}/></a></section>
 
  {#if page.data.user}
-  <a href="/gallery" class="gallery-launch"><span class="launch-icon"><Images size={26}/></span><div><span class="eyebrow">{t('THE LOOKS YOU LOVE')}</span><h2>{t('My little gallery')}</h2><p>{t('Revisit your creations. Find your next salon inspiration.')}</p></div><ArrowRight size={22}/></a>
   <nav class="home-extra" aria-label={t('More from your atelier')}><a href="/polls">{t('My nail polls ↗')}</a><a href="/premium">{t('Premium plans')}</a></nav>
  {:else}
   <div class="closing-cta"><h2>{t('Ready to design your next manicure?')}</h2><a class="primary" href="/studio">{t('Install Rose Atelier and get started')}<ArrowRight size={17}/></a><small><Heart size={13}/>{t('A free account includes 5 nail designs each day.')}</small></div>

@@ -1,7 +1,7 @@
 <script lang="ts">import {translate,dateLocale} from '$lib/i18n';const t=(text:string)=>translate(page.data.lang,text);
  import { onMount } from 'svelte';
  import { fade, fly } from 'svelte/transition';
- import { Sparkles, Upload, Camera, Heart, X, Check, Download, RefreshCw, ImagePlus, ChevronDown, SlidersHorizontal, Flower2, LoaderCircle, WandSparkles, Smartphone, UserRound, ArrowRight } from 'lucide-svelte';
+ import { Sparkles, Upload, Camera, Heart, X, Check, Download, RefreshCw, ImagePlus, ChevronDown, SlidersHorizontal, Flower2, LoaderCircle, WandSparkles, Smartphone, UserRound, ArrowRight, Vote } from 'lucide-svelte';
  import AppHeader from '$lib/AppHeader.svelte';
  import { shapes } from '$lib/shapes';
  import {page} from '$app/state';
@@ -97,7 +97,7 @@
      {#if reading&&original}<div class="busy-overlay"><LoaderCircle class="spin" size={24}/><p>{t("Preparing your photo…")}</p></div>{/if}
      {#if busy}<div class="busy-overlay" transition:fade><div class="magic-orbit"><Sparkles size={34} strokeWidth={1.3}/><span>✧</span></div><h2>{t("A little magic in the making")}</h2><p>{t(stage)}</p><div class="loading-track"><span></span></div><small>{t("You can switch apps and come back.")}</small></div>{/if}
     </div>
-    {#if result&&needsPhotoChoice}<div class="next-photo-actions" role="group" aria-label={t("Choose how to continue")}><p>{t("Choose how to create your next look.")}</p>{#if original}<button class="secondary" onclick={reuseLastPhoto}><Sparkles size={16}/>{t("Reuse the last photo")}</button>{/if}<button class="primary" onclick={takeNewPhoto}><Camera size={16}/>{t("Take a new photo")}</button></div>{/if}
+    {#if result&&needsPhotoChoice}<div class="next-photo-actions" role="group" aria-label={t("Choose how to continue")}><p>{t("Choose how to create your next look.")}</p>{#if original}<button class="secondary" onclick={reuseLastPhoto}><Sparkles size={16}/>{t("Reuse the last photo")}</button>{/if}<button class="primary" onclick={takeNewPhoto}><Camera size={16}/>{t("Take a new photo")}</button><a class="friends-poll-cta" href="/gallery#ask-friends"><Vote size={17}/>{t("Let your friends decide for you")}</a></div>{/if}
     <div class="preview-bottom">{#if result}<div class="view-toggle"><button class:active={mode==='after'} onclick={()=>mode='after'}>{t("New look")}</button><button class:active={mode==='compare'} onclick={()=>mode='compare'} disabled={!original}>{t("Before / after")}</button></div><button class="save-btn" onclick={saveImage} disabled={downloading}><Download size={16}/>{downloading?t("Saving…"):t("Save look")}</button>{:else}<span><Camera size={16}/> {t("Natural light. One hand. Nails in focus.")}</span><Heart size={17} strokeWidth={1.5}/>{/if}</div>
    </section>
    <section class="design-panel" aria-label={t("Customize your nail design")}>

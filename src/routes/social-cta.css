@@ -1,0 +1,7 @@
+.acquisition-actions{flex-direction:column;align-items:flex-start;gap:12px}
+.home-gallery-button{display:inline-flex;align-items:center;gap:9px;min-height:46px;padding:11px 17px;border:1px solid #dfbdc9;border-radius:14px;background:#fffdfa;color:#854557;font-size:13px;font-weight:700;text-decoration:none;transition:background .2s,transform .2s}
+.home-gallery-button:hover{background:#f8e9ee;transform:translateY(-1px)}
+.gallery-poll-toolbar .poll-invite-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:13px 19px;font-size:13px;font-weight:700;box-shadow:0 7px 20px #a9235425}
+.next-photo-actions>.friends-poll-cta{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:11px 14px;border:1px solid #dfbdc9;border-radius:12px;background:#fff0f5;color:#8d3659;font-size:13px;font-weight:700;text-align:center;text-decoration:none}
+.next-photo-actions>.friends-poll-cta:hover{background:#fbe1eb}
+@media(max-width:640px){.gallery-poll-toolbar>.poll-invite-button{width:100%;min-height:50px;font-size:13px}.next-photo-actions>.friends-poll-cta{width:100%}}
