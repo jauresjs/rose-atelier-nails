@@ -4,4 +4,7 @@
 .gallery-poll-toolbar .poll-invite-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:13px 19px;font-size:13px;font-weight:700;box-shadow:0 7px 20px #a9235425}
 .next-photo-actions>.friends-poll-cta{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:11px 14px;border:1px solid #dfbdc9;border-radius:12px;background:#fff0f5;color:#8d3659;font-size:13px;font-weight:700;text-align:center;text-decoration:none}
 .next-photo-actions>.friends-poll-cta:hover{background:#fbe1eb}
+.platform-share-actions{display:flex;width:100%;flex-wrap:wrap;gap:10px}
+.platform-share-actions>.secondary{display:inline-flex;flex:1 1 155px;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 15px;text-decoration:none;font-size:12px}
+.platform-mark{display:inline-grid;width:21px;height:21px;place-items:center;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:800}
 @media(max-width:640px){.gallery-poll-toolbar>.poll-invite-button{width:100%;min-height:50px;font-size:13px}.next-photo-actions>.friends-poll-cta{width:100%}}
