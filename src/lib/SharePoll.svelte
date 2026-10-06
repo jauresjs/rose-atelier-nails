@@ -2,10 +2,10 @@
  import {onMount,tick} from 'svelte';
  import {Sparkles,Share2,Copy,Download,LoaderCircle,Check,Instagram} from 'lucide-svelte';
  import {storyFiles,downloadStories} from '$lib/story';
- let {poll}:{poll:{id:string;title:string;options:{position:number;image:string;shape:string}[]}}=$props();
+ let {poll}:{poll:{id:string;title:string;slug:string;options:{position:number;image:string;shape:string}[]}}=$props();
  let files=$state<File[]>([]),preparing=$state(false),message=$state(''),copied=$state(false);
  $effect(()=>{page.data.lang;files=[];});
- const link=$derived(typeof window!=='undefined'?`${window.location.origin}/p/${poll.id}`:'');
+ const link=$derived(typeof window!=='undefined'?`${window.location.origin}/${poll.slug}`:'');
  const pinterestUrl=$derived(typeof window!=='undefined'?`https://www.pinterest.com/pin/create/button/?url=${encodeURIComponent(link)}&media=${encodeURIComponent(new URL(poll.options[0].image,window.location.origin).href)}&description=${encodeURIComponent(`${poll.title} · ${t('Vote for your favorite manicure:')}`)}`:'');
  async function copy(){try{await navigator.clipboard.writeText(link);copied=true;message='Poll link copied. Paste it into your story or share it with your friends.';}catch{message='Copy the poll link shown below.';}}
  async function prepare(){if(preparing||files.length)return;preparing=true;message='';try{const language=page.data.lang;const prepared=await storyFiles(poll.title,poll.options,language);if(language===page.data.lang){files=prepared;await tick();void loadSnapchat();}}catch(e){message=e instanceof Error?e.message:'Stories could not be prepared. Try again.';}finally{preparing=false;}}

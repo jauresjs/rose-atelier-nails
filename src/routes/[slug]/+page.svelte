@@ -1,0 +1,9 @@
+<script lang="ts">
+ import {translate,dateLocale} from '$lib/i18n';import {page} from '$app/state';const t=(text:string)=>translate(page.data.lang,text);
+ import AppHeader from '$lib/AppHeader.svelte';import {ArrowUpRight,Vote} from 'lucide-svelte';import type {PageProps} from './$types';
+ let {data}:PageProps=$props();
+</script>
+<svelte:head><title>{t('Polls by')} {data.profile.displayName} · Rose Atelier</title><meta name="description" content={`${t('Vote on nail designs by')} ${data.profile.displayName}.`}/><meta property="og:title" content={`${t('Polls by')} ${data.profile.displayName} · Rose Atelier`}/><meta property="og:description" content={t('Choose a poll and help pick a favorite manicure.')}/>{#if data.polls[0]}<meta property="og:image" content={`${data.origin}${data.polls[0].image}`}/>{/if}<meta property="og:url" content={`${data.origin}/${data.profile.slug}`}/><meta name="robots" content="noindex,follow"/></svelte:head>
+<div class="app-shell"><AppHeader/><main class="polls-main pollster-main"><div class="gallery-heading"><div><span class="eyebrow">{t('A LITTLE GROUP DECISION')}</span><h1>{t('Help')} <i>{data.profile.displayName}</i> {t('pick a favorite manicure.')}</h1><p>{t('Choose one of the polls below and vote for your favorite nail design.')}</p></div></div>
+ {#if data.polls.length}<div class="poll-list">{#each data.polls as poll}<a href={`/p/${poll.id}`}><div class="poll-list-icon poll-page-image"><img src={poll.image} alt="" loading="lazy"/></div><div><span class="eyebrow">{poll.closed?t('CLOSED'):t('LIVE')} · {poll.votes} {poll.votes===1?t('vote'):t('votes')}</span><h2>{poll.title}</h2><p>{new Date(poll.created).toLocaleDateString(dateLocale(page.data.lang))}</p></div><ArrowUpRight size={22}/></a>{/each}</div>{:else}<section class="gallery-empty"><span class="empty-flower"><Vote size={32}/></span><h2>{t('No polls are available right now.')}</h2></section>{/if}
+ </main></div>

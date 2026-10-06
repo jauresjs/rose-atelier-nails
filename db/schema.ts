@@ -13,6 +13,9 @@ export const generationAttempts=sqliteTable('generation_attempts',{
 export const polls=sqliteTable('polls',{
  id:text('id').primaryKey(),owner:text('owner').notNull(),title:text('title').notNull(),created:integer('created').notNull(),closed:integer('closed'),creationKey:text('creation_key').notNull()
 },t=>[index('poll_owner_created').on(t.owner,t.created),uniqueIndex('poll_creation_key').on(t.owner,t.creationKey)]);
+export const pollProfiles=sqliteTable('poll_profiles',{
+ owner:text('owner').primaryKey(),displayName:text('display_name').notNull(),slug:text('slug').notNull()
+},t=>[uniqueIndex('poll_profile_slug').on(t.slug)]);
 export const pollOptions=sqliteTable('poll_options',{
  pollId:text('poll_id').notNull(),position:integer('position').notNull(),designId:text('design_id').notNull()
 },t=>[uniqueIndex('poll_option_position').on(t.pollId,t.position),uniqueIndex('poll_option_design').on(t.pollId,t.designId)]);
